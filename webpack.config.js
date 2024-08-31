@@ -1,58 +1,45 @@
 const path = require("path");
-const HTMLPlugin = require("html-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   entry: {
-    index: "./src/index.tsx",
+    popup: "./src/popup/index.tsx",
+    background: "./src/background/index.ts",
+    content: "./src/content/index.tsx",
   },
-  mode: "production",
+  output: {
+    path: path.resolve(__dirname, "dist"),
+    filename: "[name].js",
+  },
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: [
-          {
-            loader: "ts-loader",
-            options: {
-              compilerOptions: { noEmit: false },
-            },
-          },
-        ],
+        test: /\.(ts|tsx)$/,
+        use: "ts-loader",
         exclude: /node_modules/,
       },
       {
-        exclude: /node_modules/,
-        test: /\.css$/i,
+        test: /\.css$/,
         use: ["style-loader", "css-loader"],
       },
     ],
   },
   plugins: [
+    new HtmlWebpackPlugin({
+      template: "./public/popup.html",
+      filename: "popup.html",
+      chunks: ["popup"],
+    }),
     new CopyPlugin({
       patterns: [
-        { from: "manifest.json", to: "../manifest.json" },
-        { from: "icons", to: "../icons" },
+        { from: "public/manifest.json", to: "manifest.json" },
+        { from: "public/icon.png", to: "icon.png" },
+        { from: "public/icons", to: "icons" },
       ],
     }),
-    ...getHtmlPlugins(["index"]),
   ],
   resolve: {
-    extensions: [".tsx", ".ts", ".js"],
-  },
-  output: {
-    path: path.join(__dirname, "dist/js"),
-    filename: "[name].js",
+    extensions: [".ts", ".tsx", ".js"],
   },
 };
-
-function getHtmlPlugins(chunks) {
-  return chunks.map(
-    (chunk) =>
-      new HTMLPlugin({
-        title: "React extension",
-        filename: `${chunk}.html`,
-        chunks: [chunk],
-      })
-  );
-}
